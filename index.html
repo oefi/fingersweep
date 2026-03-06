@@ -641,7 +641,6 @@ body::after {
   }
   #logo { top: calc(var(--st) + 5%); }
   #logo-title { font-size: clamp(2.2rem, 8vw, 6rem); }
-  /* In landscape winner overlay gets a bit more height */
   #winner-overlay { height: 52%; }
 }
 
@@ -654,6 +653,57 @@ body::after {
   }
   #logo-title { font-size: 2.5rem; }
   .fp-num { font-size: .45rem; top: -20px; }
+}
+
+/* ── PHONE OVERRIDES ──────────────────────────────────────────
+   Applied when JS detects a phone (shorter screen dimension < 600px
+   CSS pixels). Fingerprints are scaled up so they visibly bleed
+   past a finger pad (~55px) on a small screen. Without this,
+   fingerprints are ~21% of screen width — barely visible. At these
+   sizes they're ~28–30%, which gives clear edge-bleed feedback.
+
+   data-device="phone" is set on <html> at load by detectDevice().
+   The attribute persists through orientation changes — the
+   orientation @media queries above still apply on top and fine-tune.
+   ─────────────────────────────────────────────────────────────── */
+html[data-device="phone"] {
+  /* Phone portrait base — larger than tablet portrait */
+  --fp-w:  110px;  --fp-h:  132px;
+  --fp-hw:  55px;  --fp-hh:  66px;
+  --ring-sz: 134px; --ring-half: 67px;
+}
+html[data-device="phone"] #logo-title {
+  font-size: clamp(2.8rem, 16vw, 5rem);
+}
+
+/* Phone + portrait: keep the larger phone values (override the
+   generic portrait block which would shrink them back down) */
+html[data-device="phone"] body:has(*)  { /* anchor for specificity */ }
+@media (orientation: portrait) {
+  html[data-device="phone"] :root {
+    --fp-w:  110px;  --fp-h:  132px;
+    --fp-hw:  55px;  --fp-hh:  66px;
+    --ring-sz: 134px; --ring-half: 67px;
+  }
+}
+
+/* Phone + landscape: slight reduction — landscape has more room */
+@media (orientation: landscape) {
+  html[data-device="phone"] :root {
+    --fp-w:  100px;  --fp-h:  120px;
+    --fp-hw:  50px;  --fp-hh:  60px;
+    --ring-sz: 124px; --ring-half: 62px;
+  }
+}
+
+/* Small phone + portrait: cap at 92px — very tight screens */
+@media (orientation: portrait) and (max-width: 380px) {
+  html[data-device="phone"] :root {
+    --fp-w:   92px;  --fp-h:  110px;
+    --fp-hw:  46px;  --fp-hh:  55px;
+    --ring-sz: 114px; --ring-half: 57px;
+  }
+  html[data-device="phone"] .fp-num { font-size: .45rem; top: -20px; }
 }
 
 /* ── REDUCED MOTION ─── */
@@ -832,6 +882,25 @@ const PLAYER_COLORS = [
   '#00ffcc',  // P9  teal / aqua
   '#ff00cc',  // P10 magenta
 ];
+
+/* ════════════════════════════════════════════════════════════
+   DEVICE DETECTION
+   Called once at startup. Sets data-device="phone"|"tablet" on
+   <html> so CSS can apply device-appropriate fingerprint sizes.
+
+   Signal: Math.min(screen.width, screen.height) — the shorter
+   physical dimension in CSS pixels. Phones are reliably < 600px,
+   tablets >= 600px. This is more stable than UA sniffing and
+   correctly handles foldables / desktop browsers too.
+
+   We do NOT re-detect on orientation change — the attribute stays
+   constant and the orientation @media queries handle the rest.
+   ════════════════════════════════════════════════════════════ */
+function detectDevice() {
+  const shorter = Math.min(screen.width, screen.height);
+  document.documentElement.dataset.device = shorter < 600 ? 'phone' : 'tablet';
+}
+detectDevice();
 
 /* ════════════════════════════════════════════════════════════
    DOM REFERENCES
