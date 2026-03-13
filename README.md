@@ -1,82 +1,57 @@
-# ▲ ALTAR — Who Goes First?
-
-> The board-game first-player ritual. Everyone places a finger. One is chosen.
-
 ![altar](https://github.com/user-attachments/assets/5214cc3b-cde6-412a-bdfc-c8d860eab615)
 
-## What it is
+# ALTAR — Who Goes First?
 
-A single HTML file you open on a phone or tablet and lay flat on the table.  
-No app store. No install. No backend. No framework. Save the file once, works offline.
+A browser-based first-player selector for board games. Everyone places a finger on the screen; one is chosen.
 
-Players place their fingers on the screen simultaneously. A sonar-style countdown locks everyone in. A slot-machine animation cycles through all fingers with exponential slowdown — then one is chosen.
-
-Takes about 15 seconds. Creates about 15 seconds of genuine tension.
+**[Live demo →](https://oefi.github.io/finger_altar/)**
 
 ---
 
-## How to use
+## How it works
 
-1. Open `index.html` in any mobile browser  
-   — or use the [live demo](https://oefi.github.io/finger_altar/)
-2. Tap **Add to Home Screen** for true fullscreen (recommended)
-3. Lay the device flat on the table
-4. Everyone places a finger
-5. Hold until the timer locks in
-6. Watch the ritual unfold
-
-**Controls** (top-right corner):
-- 🔊 — toggle sound on/off
-- ⛶ — fullscreen (Android/Chrome only; iOS use Add to Home Screen)
-
----
+1. **Screensaver** — ghost fingerprints drift across the screen. No instructions needed.
+2. **Collecting** — each touch registers a colored fingerprint and a sonar ring. A perimeter countdown starts; it resets on every new touch so late players can join.
+3. **Locked** — timer hits zero, no more entries.
+4. **Selecting** — slot-machine animation cycles through all fingers with exponential slowdown. The winner is determined by `Math.random()` before the animation begins.
+5. **Winner** — chosen finger pulses; losers shrink away. Auto-resets after 5.5 s or tap **▲ AGAIN**.
 
 ## Features
 
-- Up to **10 simultaneous players** (iPad/Android tablet hardware limit)
-- **Sonar screensaver** — ghost fingerprints teach the UI without instructions
-- **Perimeter countdown timer** — visible from all sides of the table
-- **Slot-machine selection** — winner chosen by RNG before animation starts
-- **Collision-aware winner overlay** — text flips to avoid covering the winning finger
-- **▲ AGAIN button** — instant re-run from the winner screen
-- **Sound toggle** — mutable Web Audio synthesis, zero audio files
-- **PWA / Add to Home Screen** — installs with correct name, icon, fullscreen mode
-- **prefers-reduced-motion** — respects OS accessibility settings
-- **visibilitychange** — timer pauses on phone calls / tab switches
-- Mouse fallback for desktop testing
+- Up to 10 simultaneous players
+- Synthesized audio (Web Audio API — no sound files)
+- Haptic feedback on lock-in and winner reveal (Android)
+- Perimeter countdown timer with color-coded urgency (green → amber → red)
+- Status messages mirrored to all four screen edges — readable from any seat
+- Fullscreen API (Android/Chrome); Add to Home Screen prompt (iOS)
+- `prefers-reduced-motion` respected
+- PWA manifest included — installable
 
----
+## Technical
 
-## Tech
-
-| Thing | Reality |
+| | |
 |---|---|
-| File count | 1 |
-| Dependencies | 0 |
-| Framework | none |
-| Build step | none |
-| Backend | none |
-| Audio files | none |
-| Total size | ~22 KB |
+| Dependencies | None |
+| External requests | None (fonts inlined as base64 woff2) |
+| Deployment | Drop a single HTML file anywhere |
+| Offline | Works from first load |
+| Audio | Fully synthesized via Web Audio API |
+| State machine | `screensaver → collecting → locked → selecting → winner` |
 
-Web Audio API (synthesized oscillators) · Touch Events API · CSS custom properties · SVG `stroke-dashoffset` timer · RequestAnimationFrame loop · Web App Manifest (inline data URI)
+## Tunable constants
 
----
+At the top of the `<script>` block:
 
-## Development
-
-
-All constants (timer duration, winner display time, player colors) are at the top of the `<script>` block.
-
----
-
-## Repo structure
-
+```js
+const TIMER_MS   = 4000;  // ms before lock-in (resets on each new touch)
+const WINNER_MS  = 5500;  // ms winner screen displays before auto-reset
+const LOCK_PAUSE = 500;   // ms between lock flash and selection animation
+const MIN_STEPS  = 24;    // minimum slot-machine steps before final lap
 ```
-index.html
-README.md
-LICENSE
----
+
+## Browser support
+
+Any browser with multi-touch support. Tested on Chrome/Android and Safari/iOS. Mouse fallback available for desktop testing (one simulated finger).
 
 ## License
 
