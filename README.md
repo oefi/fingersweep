@@ -1,5 +1,8 @@
 # Fingersweep
 
+
+![Demo animation of Fingersweep](demo.gif)
+
 **Who goes first?**  
 A single-file, touch-first web ritual for board games.  
 Players place their fingers on a screen; one is chosen at random.
