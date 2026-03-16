@@ -373,21 +373,6 @@ body::after {
   50%      { filter: drop-shadow(0 0 14px currentColor); opacity: 1; }
 }
 
-/* Player label — above the FP, never under the finger */
-.fp-num {
-  position: absolute;
-  top: -24px; left: 50%;
-  transform: translateX(-50%);
-  font-family: var(--font-m);
-  font-size: clamp(.48rem, 1.3vw, .62rem);
-  letter-spacing: .14em;
-  background: rgba(0,12,6,.85);
-  border: 1px solid currentColor;
-  border-radius: 10px;
-  padding: .1em .42em;
-  white-space: nowrap; color: currentColor; opacity: .92;
-}
-
 /* ── SONAR RING ─── */
 .fp-ring {
   position: absolute;
@@ -1203,10 +1188,8 @@ function addFinger(id,x,y){
   el.style.color=color; el.style.left=x+'px'; el.style.top=y+'px';
   const ring=document.createElement('div');
   ring.className='fp-ring'; ring.style.color=color;
-  const lbl=document.createElement('div');
-  lbl.className='fp-num'; lbl.textContent='P'+num;
-  el.innerHTML=fpSVG();
-  el.appendChild(ring); el.appendChild(lbl);
+  el.innerHTML = fpSVG();
+  el.appendChild(ring);
   $layer.appendChild(el);
   requestAnimationFrame(()=>el.classList.add('active'));
   fingers.set(id,{el,color,num});
