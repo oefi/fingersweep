@@ -1,4 +1,4 @@
-# Fingersweep
+# Fingersweep (for smartphones/tablets/desktop browsers)
 
 
 ![Demo animation of Fingersweep](demo.gif)
