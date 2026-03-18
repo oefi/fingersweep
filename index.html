@@ -188,6 +188,11 @@ body::after {
 }
 
 /* ── RADAR ─── */
+@media (prefers-reduced-motion: reduce) {
+  #timer-dot {
+    display: none !important;
+  }
+}
 #radar-wrap {
   position: absolute; top: 50%; left: 50%;
   width: 200vmax; height: 200vmax;
@@ -454,13 +459,14 @@ body::after {
 #timer-svg.visible { opacity: 1; }
 #timer-rect {
   fill: none; stroke: var(--accent);
-  stroke-width: 5; stroke-linecap: square;
+  stroke-width: 10; stroke-linecap: square;
   filter: drop-shadow(0 0 5px var(--accent));
   stroke-dasharray: 9999; stroke-dashoffset: 0;
 }
 #timer-rect.warn { stroke: #ffb700; filter: drop-shadow(0 0 5px #ffb700); }
 #timer-rect.crit {
   stroke: #ff3300; filter: drop-shadow(0 0 8px #ff3300);
+  stroke-width: 10; /* 50% thicker when selection is imminent */
   animation: crit-flash .38s ease-in-out infinite;
 }
 @keyframes crit-flash { 0%,100%{opacity:1} 50%{opacity:.45} }
@@ -777,8 +783,6 @@ html[data-device="phone"] body:has(*)  { /* anchor for specificity */ }
        Sits in the top ~9% of screen — clear of the center
        touch zone. Dims (.dim) once collecting starts. -->
   <div id="logo">
-    <span id="logo-sym">▲</span>
-    <div id="logo-title">FINGERSWEEP</div>
   </div>
 
   <!-- ── EDGE HINTS ─────────────────────────────────────────
@@ -1178,6 +1182,12 @@ function addFinger(id,x,y){
       updateCount(); // restore normal count display
     }, 800);
     return;
+  }
+
+  // Haptic feedback: two short bursts on new touches only.
+  // (Skip the desktop testing 'mouse' pointer.)
+  if (id !== 'mouse' && navigator.vibrate) {
+    navigator.vibrate([30, 40, 30]);
   }
 
   playerSeq++;
