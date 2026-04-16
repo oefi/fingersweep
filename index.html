@@ -1398,6 +1398,8 @@ function runSelection(){
   const wid    = ids[winIdx];
 
   // Build the step sequence: random phase + final lap ending on winner
+  // Linear slowdown: starts fast (~20ms per step), ends slow (~200ms per step)
+  // Total duration ~4 seconds depending on player count
   const seq  = [];
   const rand = MIN_STEPS + n*3;
   for(let i=0;i<rand;i++) seq.push(Math.floor(Math.random()*n));
@@ -1428,7 +1430,7 @@ function runSelection(){
     prev=cur;
     const p=step/seq.length;
     step++;
-    setTimeout(tick, 38+Math.pow(p,2.5)*780); // exponential slowdown
+    setTimeout(tick, 20 + p * 180); // linear slowdown: start ~20ms, end ~200ms
   }
   tick();
 }
