@@ -119,6 +119,18 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   CSS CONFIGURATION
+   Edit these :root variables to customize the visual design.
+
+   --accent    : Main brand color (phosphor green default)
+   --bg        : Page background color
+   --font-t    : Title font (display/headings)
+   --font-m    : UI font (labels, buttons, numbers)
+   --fp-w/h    : Fingerprint dimensions (width/height)
+   --ring-sz   : Sonar ring diameter
+   ─────────────────────────────────────────────────────────────────────────── */
+
 :root {
   /* Brand colors */
   --accent:  #00ff41;          /* phosphor green — the entire palette is keyed to this */
@@ -878,15 +890,42 @@ html[data-device="phone"] body:has(*)  { /* anchor for specificity */ }
 <script>
 "use strict";
 
-/* ════════════════════════════════════════════════════════════
-   CONSTANTS
-   Tune gameplay feel here without touching logic.
-   ════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════════════
+   CONFIGURATION
+   Tweak these values to adjust gameplay feel. No need to touch the logic.
 
-const TIMER_MS   = 4000;  // ms from first touch (or last change) before lock-in
-const WINNER_MS  = 5500;  // ms winner screen stays up before auto-reset
-const LOCK_PAUSE = 500;   // ms of lock-flash before selection animation begins
-const MIN_STEPS  = 24;    // minimum slot-machine steps before the final lap
+   ── TIMING ────────────────────────────────────────────────────────────────────
+   TIMER_MS     : Milliseconds from first touch (or last new touch) before lock.
+                 Increase for more time to let late joiners.
+   WINNER_MS    : How long the winner screen displays before auto-reset.
+                 Decrease for faster resets, increase for more dramatic pauses.
+   LOCK_PAUSE   : Delay between timer expiration and selection animation start.
+                 Gives visual feedback that "locking" occurred.
+   MIN_STEPS    : Minimum slot-machine spins before final lap.
+                 Higher = longer/more dramatic selection.
+
+   ── LIMITS ────────────────────────────────────────────────────────────────────
+   MAX_PLAYERS  : Maximum simultaneous touches (10 = iPad/Android tablet max).
+                 Don't exceed 10 — higher won't work on many devices.
+
+   ── COLORS ────────────────────────────────────────────────────────────────────
+   PLAYER_COLORS: 10 distinct colors, ordered by hue for visual separation.
+                 Each player gets the next color in the list.
+                 Must have exactly 10 entries matching MAX_PLAYERS.
+
+   ── CSS ─────────────────────────────────────────────────────────────────────
+   Additional styling variables are defined in the :root block in <style>
+   around line 122. Edit those CSS custom properties to change:
+   - Brand colors (--accent, --bg)
+   - Fonts (--font-t, --font-m)
+   - Fingerprint sizes (--fp-w, --fp-h, --ring-sz)
+   ───────────────────────────────────────────────────────────────────────────── */
+const TIMER_MS   = 3000;  // ms before lock-in (4 seconds)
+const WINNER_MS  = 3500;  // ms winner screen displays (5.5 seconds)
+const LOCK_PAUSE = 500;   // ms lock-flash duration (0.5 seconds)
+const MIN_STEPS  = 24;    // slot-machine minimum spins
+
+const MAX_PLAYERS = 10;   // max simultaneous fingers
 
 // 10 colors = max simultaneous touch points on iPad / Android tablet.
 // Each entry is visually distinct on a dark background at a glance.
@@ -904,7 +943,7 @@ const PLAYER_COLORS = [
   '#ff00cc',  // P10 magenta
 ];
 
-/* ════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════════════════
    DEVICE DETECTION
    Called once at startup. Sets data-device="phone"|"tablet" on
    <html> so CSS can apply device-appropriate fingerprint sizes.
@@ -923,10 +962,10 @@ function detectDevice() {
 }
 detectDevice();
 
-/* ════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════════════════
    DOM REFERENCES
    Cached once at startup — never queried again during gameplay.
-   ════════════════════════════════════════════════════════════ */
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 const $app        = document.getElementById('app');
 const $layer      = document.getElementById('touch-layer');
@@ -953,9 +992,9 @@ const $sndOff     = document.getElementById('snd-off');   // speaker-off icon
 const $sndToast   = document.getElementById('snd-toast'); // first-touch sound hint
 const edgeHints   = document.querySelectorAll('.edge-hint');
 
-/* ════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════════════════
    MUTABLE STATE
-   ════════════════════════════════════════════════════════════ */
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 // STATE: current phase of the state machine.
 // Valid values: 'screensaver' | 'collecting' | 'locked' | 'selecting' | 'winner'
@@ -983,8 +1022,8 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 // soundToastShown: one-shot flag — the "🔊 SOUND ON" toast fires exactly once per page load.
 let soundToastShown = false;
 
-/* ════════════════════════════════════════════════════════════
-   AUDIO  (Web Audio API — zero external files)
+/* ═══════════════════════════════════════════════════════════════════════════
+   AUDIO (Web Audio API — zero external files)
    All sounds are synthesized from OscillatorNode + GainNode.
    getAudioCtx() is called lazily on the first user gesture;
    browsers block AudioContext creation until a touch/click fires.
@@ -1032,7 +1071,7 @@ function pingTick(step,total)     { note(170 + (step/total)*330,.036,.1,'square'
 function pingLock()               { note(72,.2,.45); note(144,.07,.3,'sine',.06); }                               // low mechanical lock-in thud
 function pingWinner()             { [220,277,330,440,554].forEach((f,i)=>note(f,.1,.85,'sine',i*.055)); }         // ascending major arpeggio
 
-/* ════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════════════════
    TIMER SVG
    A single SVG <rect> spanning 100vw × 100vh. stroke-dashoffset
    drives the drain: offset = perimLen × (1 − progress).
@@ -1061,8 +1100,8 @@ function setTimer(p) {
   $timerRect.classList.toggle('crit', p<.25);            // red flashing at 25%
 }
 
-/* ════════════════════════════════════════════════════════════
-   GHOST FINGERPRINTS  (screensaver decoration)
+/* ═══════════════════════════════════════════════════════════════════════════
+   GHOST FINGERPRINTS (screensaver decoration)
    Each Ghost is a lifecycle state machine:
      in → hold → out → dead
    Ghosts drift slowly (random velocity vector, bounce off edges),
@@ -1083,6 +1122,16 @@ function fpSVG() {
     <ellipse cx="30" cy="35" rx="29" ry="35" stroke="currentColor" stroke-width=".5" opacity=".5"/>
   </svg>`;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GHOST FINGERPRINTS (screensaver decoration)
+   Each Ghost is a lifecycle state machine:
+     in → hold → out → dead
+   Ghosts drift slowly (random velocity vector, bounce off edges),
+   fade in with a sonar ping, breathe during hold, then fade out.
+   The RAF loop keeps 3+ alive at all times.
+   Entirely suppressed when reducedMotion is true.
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 class Ghost {
   constructor() {
@@ -1171,10 +1220,10 @@ function tickGhosts(now,dt){
 function addFinger(id,x,y){
   if(fingers.has(id)) return;
 
-  // Hard cap: 10 matches the maximum simultaneous touch points on iPad/Android tablet.
+  // Hard cap at MAX_PLAYERS (defaults to 10, matches iPad/Android tablet max).
   // Flash the player-count pill red for 800 ms so the table knows why the touch was ignored.
-  if(fingers.size >= 10){
-    $pcount.textContent = 'MAX 10';
+  if(fingers.size >= MAX_PLAYERS){
+    $pcount.textContent = 'MAX ' + MAX_PLAYERS;
     $pcount.classList.add('show','maxed');
     clearTimeout($pcount._maxTout);
     $pcount._maxTout = setTimeout(()=>{
@@ -1236,8 +1285,6 @@ function resetTimer(){ timerLeft=TIMER_MS; timerLast=performance.now(); setTimer
 function stopTimer() { timerOn=false; $timerSVG.classList.remove('visible'); setTimer(1); $timerRect.classList.remove('warn','crit'); }
 function tickTimer(now){
   if(!timerOn) return;
-  // Clamp to 50 ms — same guard as the RAF loop — so a single-frame
-  // CPU stall (GC, layout thrash) can't drain an outsized chunk.
   const dt=Math.min(now-timerLast,50); timerLast=now;
   timerLeft=Math.max(0,timerLeft-dt);
   setTimer(timerLeft/TIMER_MS);
@@ -1271,7 +1318,7 @@ function enterScreensaver(){
 }
 
 function enterCollecting(){
-  STATE='collecting'; clearGhosts(); // hideHints() removed — setStatus() now mirrors msg to edge hints
+  STATE='collecting'; clearGhosts();
   $logo.classList.add('dim');
   $radarWrap.classList.add('hidden');
   setStatus('HOLD — MORE PLAYERS CAN JOIN');
@@ -1284,7 +1331,7 @@ function lockIn(){
   STATE='locked'; stopTimer();
   setStatus('LOCKED · CHOOSING...');
   $pcount.classList.remove('show');
-  pingLock(); navigator.vibrate?.([80,40,160]); // lock-in thud
+  pingLock(); navigator.vibrate?.([80,40,160]);
   $lockFlash.classList.add('on');
   setTimeout(()=>{ $lockFlash.classList.remove('on'); runSelection(); }, LOCK_PAUSE);
 }
@@ -1322,8 +1369,8 @@ function enterWinner(wid){
   winTout=setTimeout(enterScreensaver, WINNER_MS);
 }
 
-/* ════════════════════════════════════════════════════════════
-   SELECTION ALGORITHM  (the slot machine)
+/* ═══════════════════════════════════════════════════════════════════════════
+   SELECTION ALGORITHM (the slot machine)
 
    The winner is chosen by Math.random() BEFORE the animation
    starts — the visual drama is pure theater, not real-time RNG.
@@ -1386,7 +1433,7 @@ function runSelection(){
   tick();
 }
 
-/* ════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════════════════
    TOUCH & MOUSE HANDLERS
    Touch events use {passive:false} so e.preventDefault() works
    (required to suppress browser scroll/zoom while fingers are down).
@@ -1501,9 +1548,6 @@ document.addEventListener('visibilitychange', () => {
 // Note: we only handle this during collecting — other states ignore new touches anyway.
 $layer.addEventListener('pointercancel', e => {
   if (STATE !== 'collecting') return;
-  // pointerType 'touch': map pointerId to a touch id only if we track it
-  // We use the pointerId as the key — different from touch identifier, but
-  // since we clear fingers on visibilitychange already, this is belt-and-suspenders.
   removeFinger(e.pointerId);
   if (STATE === 'collecting') {
     updateCount();
@@ -1523,7 +1567,7 @@ window.addEventListener('blur', () => {
   }
 });
 
-/* ════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════════════════
    RAF LOOP
    Single requestAnimationFrame loop for the entire app.
    dt is clamped to 50 ms to prevent the timer draining instantly
