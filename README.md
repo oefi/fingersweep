@@ -14,7 +14,7 @@ Open `index.html` in any browser — no server, no install, works offline.
 
 3. **Locked** — When the timer hits zero, the state machine locks. A lock sound plays, haptic feedback fires, and the selection animation begins.
 
-4. **Selecting** — Slot-machine style cycling through all fingers, with exponential slowdown. The winner was already chosen by `Math.random()` before the animation started. The visual is theater, not real-time RNG.
+4. **Selecting** — Slot-machine style cycling through all fingers, with linear slowdown. The winner was already chosen by `Math.random()` before the animation started. The visual is theater, not real-time RNG.
 
 5. **Winner** — The winning finger throbs, losers shrink to 8% opacity, and the overlay shows who won. Auto-resets after 5.5 seconds.
 
@@ -104,7 +104,7 @@ const lap = [0,1,...,n-1] rotated until winner is last
 seq = [...randomSteps, ...finalLap]
 ```
 
-Timing: `38 + (progress^2.5) * 780` ms per step. The 2.5 exponent creates steep exponential slowdown — chaotic early, deliberate near the end.
+Timing: starts at ~20ms per step (fast spin), ends at ~200ms per step (slow wind-down). Total duration ~4 seconds.
 
 ## Device Detection
 
