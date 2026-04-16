@@ -1424,7 +1424,7 @@ function runSelection(){
     }
     const cf=fingers.get(ids[cur]);
     if(cf){ cf.el.classList.add('sel-hi'); cf.el.style.filter=`drop-shadow(0 0 14px ${cf.color})`; }
-    pingTick(step,seq.length);
+    if(prev!==cur) pingTick(step,seq.length); // only beep when highlight actually changes
     prev=cur;
     const p=step/seq.length;
     step++;
